@@ -1,0 +1,13 @@
+<resources>
+    <string name="app_name">शिवकृपा पशुखाद्य</string>
+    <string name="privacy_policy_url">https://www.example.com/privacy-policy</string>
+    <string name="about_us_text">शिवकृपा पशुखाद्य हे शेतकऱ्यांसाठी एक विश्वसनीय व्यासपीठ आहे. आम्ही उच्च दर्जाचे पशुखाद्य आणि पारदर्शक व्यवहार देण्यास कटिबद्ध आहोत.</string>
+    <string name="contact_info">संपर्क: +91 98XXXXXXXX\nपत्ता: [तुमचा पत्ता]</string>
+
+    <!-- गहाळ झालेले टॅग्स (Missing Tags) -->
+    <string name="mobile_hint">मोबाईल नंबर टाका</string>
+    <string name="password_hint">पासवर्ड टाका</string>
+    <string name="select_role">भूमिका निवडा</string>
+    <string name="role_farmer">शेतकरी (Farmer)</string>
+    <string name="role_dealer">विक्रेता (Dealer)</string>
+</resources>

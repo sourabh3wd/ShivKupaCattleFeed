@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Modern & Premium Unified Blue Palette -->
+    <color name="primary">#1A73E8</color> <!-- Google Blue -->
+    <color name="primary_variant">#1557B0</color>
+    <color name="primary_light">#E8F0FE</color> <!-- Light Blue Tint -->
+
+    <color name="secondary">#1A73E8</color>
+    <color name="secondary_variant">#1557B0</color>
+    <color name="accent">#1A73E8</color> <!-- Added missing accent color -->
+
+    <color name="background">#F8F9FA</color> <!-- Light Gray Background -->
+    <color name="surface">#FFFFFF</color>
+
+    <!-- Text Colors -->
+    <color name="text_main">#202124</color>
+    <color name="text_secondary">#5F6368</color>
+    <color name="text_white">#FFFFFF</color>
+
+    <!-- Standard UI Colors (No more Orange) -->
+    <color name="ui_blue_bg">#F1F6FF</color>
+    <color name="ui_blue_icon">#1A73E8</color>
+
+    <color name="error_red">#D93025</color>
+    <color name="white">#FFFFFF</color>
+    <color name="black">#000000</color>
+
+    <!-- Premium PIN Colors -->
+    <color name="pin_digit_bg">#F1F3F4</color>
+    <color name="pin_input_text">#1A73E8</color>
+</resources>

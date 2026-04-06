@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+        android:id="@+id/nav_home"
+        android:icon="@android:drawable/ic_menu_today"
+        android:title="होम" />
+    <item
+        android:id="@+id/nav_hishob"
+        android:icon="@android:drawable/ic_menu_agenda"
+        android:title="हिशोब" />
+    <item
+        android:id="@+id/nav_stock"
+        android:icon="@android:drawable/ic_input_add"
+        android:title="स्टॉक" />
+    <item
+        android:id="@+id/nav_udhar"
+        android:icon="@android:drawable/ic_menu_view"
+        android:title="उधारी" />
+    <item
+        android:id="@+id/nav_reports"
+        android:icon="@android:drawable/ic_menu_save"
+        android:title="रिपोर्ट" />
+</menu>

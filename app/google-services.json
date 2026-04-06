@@ -1,0 +1,30 @@
+{
+  "project_info": {
+    "project_number": "40779357185",
+    "firebase_url": "https://pratik-projects-ca974-default-rtdb.asia-southeast1.firebasedatabase.app",
+    "project_id": "pratik-projects-ca974",
+    "storage_bucket": "pratik-projects-ca974.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:40779357185:android:2087090a71da456f857400",
+        "android_client_info": {
+          "package_name": "com.example.shivkupacattlefeed"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCdAoDHAkeEFDuOjOH1fXVZCMJiheuQonA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
