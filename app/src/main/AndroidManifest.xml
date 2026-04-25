@@ -35,6 +35,7 @@
         <activity android:name=".HishobActivity" />
         <activity android:name=".SellProductActivity" />
         <activity android:name=".UdharRegisterActivity" />
+        <activity android:name=".ProductMasterActivity" />
 
         <provider
             android:name="androidx.core.content.FileProvider"

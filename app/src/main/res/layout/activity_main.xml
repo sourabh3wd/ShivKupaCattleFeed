@@ -160,17 +160,52 @@
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
-            <!-- Action Button: New Sale -->
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btnSellProduct"
+            <LinearLayout
                 android:layout_width="match_parent"
-                android:layout_height="64dp"
-                android:layout_marginBottom="24dp"
-                android:text="नवीन विक्री (New Sale)"
-                android:textSize="18sp"
-                android:textStyle="bold"
-                app:cornerRadius="16dp"
-                app:icon="@android:drawable/ic_input_add" />
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginBottom="24dp">
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnSellProduct"
+                    android:layout_width="0dp"
+                    android:layout_height="64dp"
+                    android:layout_weight="1"
+                    android:layout_marginEnd="4dp"
+                    android:text="विक्री"
+                    android:textSize="14sp"
+                    android:textStyle="bold"
+                    app:cornerRadius="16dp"
+                    app:icon="@android:drawable/ic_input_add" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnAddProduct"
+                    style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                    android:layout_width="0dp"
+                    android:layout_height="64dp"
+                    android:layout_weight="1"
+                    android:layout_marginHorizontal="4dp"
+                    android:text="स्टॉक"
+                    android:textSize="14sp"
+                    android:textStyle="bold"
+                    app:cornerRadius="16dp"
+                    app:icon="@android:drawable/ic_input_add"
+                    app:strokeColor="@color/primary" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnProductMaster"
+                    style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                    android:layout_width="0dp"
+                    android:layout_height="64dp"
+                    android:layout_weight="1"
+                    android:layout_marginStart="4dp"
+                    android:text="मास्टर"
+                    android:textSize="14sp"
+                    android:textStyle="bold"
+                    app:cornerRadius="16dp"
+                    app:icon="@android:drawable/ic_menu_edit"
+                    app:strokeColor="@color/primary" />
+            </LinearLayout>
 
             <!-- Search Bar -->
             <com.google.android.material.textfield.TextInputLayout

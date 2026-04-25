@@ -27,6 +27,11 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 
+import com.google.android.material.bottomnavigation.BottomNavigationView;
+import android.content.Intent;
+import java.util.ArrayList;
+import java.util.List;
+
 public class HishobActivity extends AppCompatActivity {
 
     private TextView tvHishobTitle;
@@ -35,6 +40,7 @@ public class HishobActivity extends AppCompatActivity {
     private DatabaseReference mDatabaseOrders, mDatabaseProducts;
     private String dealerId;
     private ImageButton btnBack;
+    private BottomNavigationView bottomNavigation;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -47,8 +53,10 @@ public class HishobActivity extends AppCompatActivity {
         cardStockReport = findViewById(R.id.cardStockReport);
         cardUdharReport = findViewById(R.id.cardUdharReport);
         btnBack = findViewById(R.id.btnBack);
+        bottomNavigation = findViewById(R.id.bottomNavigation);
 
         btnBack.setOnClickListener(v -> finish());
+        setupBottomNavigation();
 
         dealerId = FirebaseAuth.getInstance().getUid();
         mDatabaseOrders = FirebaseDatabase.getInstance().getReference("orders");
@@ -58,8 +66,29 @@ public class HishobActivity extends AppCompatActivity {
         cardStockReport.setOnClickListener(v -> fetchStockReport());
         cardUdharReport.setOnClickListener(v -> fetchUdharReport());
         
-        // Default show today's sales
         fetchDailyReport(new SimpleDateFormat("dd-MM-yyyy", Locale.getDefault()).format(new Date()));
+    }
+
+    private void setupBottomNavigation() {
+        bottomNavigation.setSelectedItemId(R.id.nav_hishob);
+        bottomNavigation.setOnNavigationItemSelectedListener(item -> {
+            int id = item.getItemId();
+            if (id == R.id.nav_hishob) return true;
+            if (id == R.id.nav_home) { finish(); return true; }
+            
+            Intent intent = null;
+            if (id == R.id.nav_reports) intent = new Intent(this, ReportsActivity.class);
+            else if (id == R.id.nav_daily_report) intent = new Intent(this, ReceivedOrdersActivity.class);
+            else if (id == R.id.nav_udhar) intent = new Intent(this, UdharRegisterActivity.class);
+
+            if (intent != null) {
+                intent.addFlags(Intent.FLAG_ACTIVITY_NO_ANIMATION);
+                startActivity(intent);
+                finish();
+                return true;
+            }
+            return false;
+        });
     }
 
     private void showDatePickerAndFetchReport() {
@@ -71,6 +100,13 @@ public class HishobActivity extends AppCompatActivity {
         }, cal.get(Calendar.YEAR), cal.get(Calendar.MONTH), cal.get(Calendar.DAY_OF_MONTH)).show();
     }
 
+    private double parseAmount(String s) {
+        try {
+            if (s == null || s.isEmpty()) return 0;
+            return Double.parseDouble(s.replace("₹", "").replace(",", "").replace("-", "").trim());
+        } catch (Exception e) { return 0; }
+    }
+
     private void fetchDailyReport(String date) {
         tvHishobTitle.setVisibility(View.VISIBLE);
         tvHishobTitle.setText("विक्री रिपोर्ट: " + date);
@@ -79,28 +115,35 @@ public class HishobActivity extends AppCompatActivity {
         mDatabaseOrders.orderByChild("dealerId").equalTo(dealerId).addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot snapshot) {
-                long total = 0;
+                long totalSale = 0, totalCash = 0;
                 Map<String, Double> items = new HashMap<>();
                 for (DataSnapshot data : snapshot.getChildren()) {
                     Order o = data.getValue(Order.class);
                     if (o != null) {
                         String oDate = new SimpleDateFormat("dd-MM-yyyy", Locale.getDefault()).format(new Date(o.timestamp));
                         if (date.equals(oDate)) {
-                            double price = Double.parseDouble(o.totalPrice != null ? o.totalPrice.replace("₹", "").trim() : "0");
-                            total += price;
-                            double qty = Double.parseDouble(o.quantity != null ? o.quantity : "0");
-                            items.put(o.productName, items.getOrDefault(o.productName, 0.0) + qty);
+                            boolean isPayment = "पैसे जमा (Payment)".equals(o.productName);
+                            if (!isPayment) {
+                                totalSale += (long) parseAmount(o.totalPrice);
+                            }
+                            totalCash += (long) parseAmount(o.paidAmount);
+                            
+                            if (!isPayment) {
+                                String name = o.productName;
+                                items.put(name, items.getOrDefault(name, 0.0) + 1.0); // count of orders for item
+                            }
                         }
                     }
                 }
                 
-                addDetailHeader("आजची एकूण विक्री: ₹ " + total);
+                addDetailHeader("एकूण विक्री: ₹ " + totalSale);
+                addDetailHeader("एकूण जमा: ₹ " + totalCash);
 
                 if (items.isEmpty()) {
                     addDetailRow("आज कोणतीही विक्री झाली नाही", "");
                 } else {
                     for (String name : items.keySet()) {
-                        addDetailRow(name, "विक्री: " + (long)items.get(name).doubleValue() + " बॅग्स/नग");
+                        addDetailRow(name, "व्यवहार संख्या: " + (long)items.get(name).doubleValue());
                     }
                 }
             }
@@ -143,16 +186,22 @@ public class HishobActivity extends AppCompatActivity {
                 for (DataSnapshot data : snapshot.getChildren()) {
                     Order o = data.getValue(Order.class);
                     if (o != null) {
-                        double balance = Double.parseDouble(o.balanceAmount != null ? o.balanceAmount.replace("₹", "").trim() : "0");
-                        udharMap.put(o.farmerName, udharMap.getOrDefault(o.farmerName, 0.0) + balance);
+                        double balance = parseAmount(o.balanceAmount);
+                        
+                        String mobile = (o.farmerMobile != null && !o.farmerMobile.isEmpty()) ? o.farmerMobile : "NoMobile";
+                        String key = (o.farmerName != null ? o.farmerName : "Unknown") + "_" + mobile;
+                        
+                        udharMap.put(key, udharMap.getOrDefault(key, 0.0) + balance);
                     }
                 }
                 
                 boolean hasUdhar = false;
-                for (String farmer : udharMap.keySet()) {
-                    double totalBal = udharMap.get(farmer);
-                    if (totalBal > 0) {
-                        addDetailRow(farmer, "एकूण बाकी: ₹ " + (long)totalBal);
+                for (String key : udharMap.keySet()) {
+                    double totalBal = udharMap.get(key);
+                    if (totalBal != 0) {
+                        String name = key.split("_")[0];
+                        String status = totalBal > 0 ? "बाकी: ₹ " + (long)totalBal : "जमा: ₹ " + (long)Math.abs(totalBal);
+                        addDetailRow(name, status);
                         hasUdhar = true;
                     }
                 }

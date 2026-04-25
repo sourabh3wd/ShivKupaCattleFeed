@@ -96,80 +96,55 @@
                     </com.google.android.material.textfield.TextInputLayout>
 
                     <!-- Product Selection -->
-                    <com.google.android.material.textfield.TextInputLayout
-                        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginBottom="16dp"
-                        android:hint="माल निवडा (Select Product)">
-
-                        <AutoCompleteTextView
-                            android:id="@+id/actvProductSelect"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:inputType="none" />
-                    </com.google.android.material.textfield.TextInputLayout>
-
-                    <!-- Product Photo Preview in Sell -->
-                    <com.google.android.material.card.MaterialCardView
-                        android:id="@+id/cvSelectedProductPhoto"
-                        android:layout_width="match_parent"
-                        android:layout_height="180dp"
-                        android:layout_marginBottom="16dp"
-                        android:visibility="gone"
-                        app:cardCornerRadius="12dp"
-                        app:cardElevation="2dp">
-                        <ImageView
-                            android:id="@+id/ivSelectedProduct"
-                            android:layout_width="match_parent"
-                            android:layout_height="match_parent"
-                            android:scaleType="centerCrop"
-                            android:src="@android:drawable/ic_menu_gallery" />
-                    </com.google.android.material.card.MaterialCardView>
-
-                    <!-- Sell in Kg Checkbox -->
-                    <CheckBox
-                        android:id="@+id/cbSellInKg"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginBottom="8dp"
-                        android:text="सुट्टा माल विकायचा आहे? (Sell in Kg)" />
-
-                    <!-- Quantity and Rate -->
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginBottom="16dp"
-                        android:orientation="horizontal">
+                        android:orientation="vertical"
+                        android:background="#F5F5F5"
+                        android:padding="8dp"
+                        android:layout_marginBottom="16dp">
 
                         <com.google.android.material.textfield.TextInputLayout
-                            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
-                            android:layout_width="0dp"
+                            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
+                            android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:layout_marginEnd="8dp"
-                            android:layout_weight="1"
-                            android:hint="नग/संख्या">
+                            android:layout_marginBottom="8dp"
+                            android:hint="माल निवडा (Select Product)">
 
-                            <com.google.android.material.textfield.TextInputEditText
-                                android:id="@+id/etSellQuantity"
+                            <AutoCompleteTextView
+                                android:id="@+id/actvProductSelect"
                                 android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
-                                android:inputType="numberDecimal"
-                                android:text="1" />
+                                android:inputType="none" />
                         </com.google.android.material.textfield.TextInputLayout>
 
                         <LinearLayout
-                            android:layout_width="0dp"
+                            android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:orientation="vertical">
+                            android:orientation="horizontal">
 
                             <com.google.android.material.textfield.TextInputLayout
                                 style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
-                                android:layout_width="match_parent"
+                                android:layout_width="0dp"
                                 android:layout_height="wrap_content"
-                                android:hint="दर (Rate ₹)">
+                                android:layout_weight="1"
+                                android:layout_marginEnd="4dp"
+                                android:hint="नग/संख्या">
+                                <com.google.android.material.textfield.TextInputEditText
+                                    android:id="@+id/etSellQuantity"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:inputType="numberDecimal"
+                                    android:text="1" />
+                            </com.google.android.material.textfield.TextInputLayout>
 
+                            <com.google.android.material.textfield.TextInputLayout
+                                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:layout_marginEnd="4dp"
+                                android:hint="दर (Rate ₹)">
                                 <com.google.android.material.textfield.TextInputEditText
                                     android:id="@+id/etSellRate"
                                     android:layout_width="match_parent"
@@ -177,16 +152,38 @@
                                     android:inputType="numberDecimal" />
                             </com.google.android.material.textfield.TextInputLayout>
 
-                            <TextView
-                                android:id="@+id/tvUnitLabel"
+                            <com.google.android.material.button.MaterialButton
+                                android:id="@+id/btnAddToList"
                                 android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_marginStart="4dp"
-                                android:text="प्रति बॅग"
-                                android:textColor="@color/text_secondary"
-                                android:textSize="12sp" />
+                                android:layout_height="match_parent"
+                                android:text="जोडा"
+                                app:cornerRadius="8dp" />
                         </LinearLayout>
+
+                        <CheckBox
+                            android:id="@+id/cbSellInKg"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="सुट्टा (Kg)"
+                            android:textSize="12sp" />
                     </LinearLayout>
+
+                    <!-- Cart List -->
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="निवडलेला माल (Selected Items):"
+                        android:textStyle="bold"
+                        android:layout_marginBottom="4dp"/>
+
+                    <LinearLayout
+                        android:id="@+id/llCartItems"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:layout_marginBottom="16dp"
+                        android:minHeight="40dp"
+                        android:background="#FFFFFF"/>
 
                     <!-- Payment Method -->
                     <TextView

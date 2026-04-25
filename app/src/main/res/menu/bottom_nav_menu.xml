@@ -9,9 +9,9 @@
         android:icon="@android:drawable/ic_menu_agenda"
         android:title="हिशोब" />
     <item
-        android:id="@+id/nav_stock"
-        android:icon="@android:drawable/ic_input_add"
-        android:title="स्टॉक" />
+        android:id="@+id/nav_daily_report"
+        android:icon="@android:drawable/ic_menu_day"
+        android:title="आजची विक्री" />
     <item
         android:id="@+id/nav_udhar"
         android:icon="@android:drawable/ic_menu_view"

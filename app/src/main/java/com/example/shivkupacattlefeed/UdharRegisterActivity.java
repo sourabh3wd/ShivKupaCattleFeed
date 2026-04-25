@@ -4,6 +4,8 @@ import android.app.AlertDialog;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -17,6 +19,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
@@ -25,6 +28,7 @@ import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -33,10 +37,13 @@ public class UdharRegisterActivity extends AppCompatActivity {
 
     private TextView tvTotalUdhar;
     private RecyclerView rvUdharList;
+    private EditText etSearchFarmer;
     private DatabaseReference mDatabase;
     private String dealerId;
     private List<FarmerUdhar> farmerUdharList = new ArrayList<>();
+    private List<FarmerUdhar> filteredList = new ArrayList<>();
     private UdharAdapter adapter;
+    private BottomNavigationView bottomNavigation;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -45,19 +52,86 @@ public class UdharRegisterActivity extends AppCompatActivity {
 
         tvTotalUdhar = findViewById(R.id.tvTotalUdhar);
         rvUdharList = findViewById(R.id.rvUdharList);
+        etSearchFarmer = findViewById(R.id.etSearchFarmer);
+        bottomNavigation = findViewById(R.id.bottomNavigation);
         findViewById(R.id.btnBack).setOnClickListener(v -> finish());
 
         dealerId = FirebaseAuth.getInstance().getUid();
         mDatabase = FirebaseDatabase.getInstance().getReference("orders");
 
         rvUdharList.setLayoutManager(new LinearLayoutManager(this));
-        adapter = new UdharAdapter(farmerUdharList);
+        adapter = new UdharAdapter(filteredList);
         rvUdharList.setAdapter(adapter);
 
+        setupSearch();
+        setupBottomNavigation();
         fetchUdharData();
     }
 
+    private void setupBottomNavigation() {
+        bottomNavigation.setSelectedItemId(R.id.nav_udhar);
+        bottomNavigation.setOnNavigationItemSelectedListener(item -> {
+            int id = item.getItemId();
+            if (id == R.id.nav_udhar) {
+                return true;
+            } else if (id == R.id.nav_home) {
+                finish();
+                return true;
+            } else if (id == R.id.nav_hishob) {
+                startActivity(new Intent(this, HishobActivity.class).addFlags(Intent.FLAG_ACTIVITY_NO_ANIMATION));
+                finish();
+                return true;
+            } else if (id == R.id.nav_daily_report) {
+                startActivity(new Intent(this, ReceivedOrdersActivity.class).addFlags(Intent.FLAG_ACTIVITY_NO_ANIMATION));
+                finish();
+                return true;
+            } else if (id == R.id.nav_reports) {
+                startActivity(new Intent(this, ReportsActivity.class).addFlags(Intent.FLAG_ACTIVITY_NO_ANIMATION));
+                finish();
+                return true;
+            }
+            return false;
+        });
+    }
+
+    private void setupSearch() {
+        etSearchFarmer.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+                filter(s.toString());
+            }
+            @Override
+            public void afterTextChanged(Editable s) {}
+        });
+    }
+
+    private void filter(String text) {
+        filteredList.clear();
+        if (text.isEmpty()) {
+            filteredList.addAll(farmerUdharList);
+        } else {
+            String query = text.toLowerCase();
+            for (FarmerUdhar item : farmerUdharList) {
+                if (item.name.toLowerCase().contains(query) || item.mobile.contains(query)) {
+                    filteredList.add(item);
+                }
+            }
+        }
+        adapter.notifyDataSetChanged();
+    }
+
+    private long parseLong(String s) {
+        try {
+            if (s == null || s.isEmpty()) return 0;
+            return Long.parseLong(s.replace("₹", "").replace(",", "").replace("-", "").trim());
+        } catch (Exception e) { return 0; }
+    }
+
     private void fetchUdharData() {
+        // पुन्हा 'Real-time' (addValueEventListener) सेट केले आहे, 
+        // जेणेकरून पेमेंट केल्यावर किंवा विक्री केल्यावर लिस्ट लगेच अपडेट होईल.
         mDatabase.orderByChild("dealerId").equalTo(dealerId).addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot snapshot) {
@@ -67,34 +141,35 @@ public class UdharRegisterActivity extends AppCompatActivity {
                 for (DataSnapshot data : snapshot.getChildren()) {
                     Order order = data.getValue(Order.class);
                     if (order != null) {
-                        double balance = 0;
+                        // balanceAmount मध्ये विक्रीसाठी पॉझिटिव्ह आणि पेमेंटसाठी नेगेटिव्ह व्हॅल्यू असते
+                        // आपण ती थेट बेरीज करत आहोत जेणेकरून लेजर नीट मॅन्टेन होईल
+                        long balance = 0;
                         try {
                             String balStr = order.balanceAmount != null ? order.balanceAmount : "0";
                             balStr = balStr.replace("₹", "").replace(",", "").trim();
                             if (!balStr.isEmpty()) {
-                                balance = Double.parseDouble(balStr);
+                                balance = Long.parseLong(balStr);
                             }
                         } catch (Exception e) {
                             balance = 0;
                         }
 
-                        // ग्रुप करण्यासाठी मोबाईल किंवा नाव वापरा
-                        String key = (order.farmerMobile != null && !order.farmerMobile.isEmpty()) ? order.farmerMobile : (order.farmerName != null ? order.farmerName : "Unknown");
+                        String mobile = (order.farmerMobile != null && !order.farmerMobile.isEmpty()) ? order.farmerMobile : "NoMobile";
+                        String name = (order.farmerName != null && !order.farmerName.isEmpty()) ? order.farmerName : "Unknown";
+                        String key = name + "_" + mobile;
                         
                         FarmerUdhar fu = udharMap.get(key);
                         if (fu == null) {
-                            fu = new FarmerUdhar(order.farmerName != null ? order.farmerName : "अज्ञात ग्राहक", order.farmerMobile != null ? order.farmerMobile : "");
+                            fu = new FarmerUdhar(name, (mobile.equals("NoMobile") ? "" : mobile));
                             udharMap.put(key, fu);
                         }
                         
-                        // सर्व व्यवहारांची बेरीज करा (खरेदी + आणि पैसे जमा -)
-                        fu.totalBalance += (long) balance;
+                        fu.totalBalance += balance;
                     }
                 }
 
                 farmerUdharList.clear();
                 for (FarmerUdhar fu : udharMap.values()) {
-                    // जर उधारी असेल किंवा पैसे शिल्लक (Advance) असतील तर लिस्टमध्ये दाखवा
                     if (fu.totalBalance != 0) {
                         farmerUdharList.add(fu);
                         if (fu.totalBalance > 0) {
@@ -102,9 +177,12 @@ public class UdharRegisterActivity extends AppCompatActivity {
                         }
                     }
                 }
+
+                // उधारीनुसार क्रम लावा (मोठी उधारी सर्वात वर)
+                Collections.sort(farmerUdharList, (o1, o2) -> Long.compare(o2.totalBalance, o1.totalBalance));
                 
                 tvTotalUdhar.setText("₹ " + grandTotalUdhar);
-                adapter.notifyDataSetChanged();
+                filter(etSearchFarmer.getText().toString());
             }
 
             @Override
@@ -139,8 +217,18 @@ public class UdharRegisterActivity extends AppCompatActivity {
         public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
             FarmerUdhar fu = list.get(position);
             holder.tvName.setText(fu.name);
-            holder.tvMobile.setText(fu.mobile);
-            holder.tvBalance.setText("₹ " + fu.totalBalance);
+            holder.tvMobile.setText((fu.mobile == null || fu.mobile.isEmpty()) ? "मोबाईल नाही" : fu.mobile);
+            
+            if (fu.totalBalance > 0) {
+                holder.tvBalance.setText("बाकी: ₹ " + fu.totalBalance);
+                holder.tvBalance.setTextColor(android.graphics.Color.RED);
+            } else if (fu.totalBalance < 0) {
+                holder.tvBalance.setText("जमा: ₹ " + Math.abs(fu.totalBalance));
+                holder.tvBalance.setTextColor(android.graphics.Color.parseColor("#2E7D32")); // हिरवा रंग
+            } else {
+                holder.tvBalance.setText("हिशोब नील (0)");
+                holder.tvBalance.setTextColor(android.graphics.Color.GRAY);
+            }
 
             holder.btnCall.setOnClickListener(v -> {
                 Intent intent = new Intent(Intent.ACTION_DIAL);
@@ -190,9 +278,11 @@ public class UdharRegisterActivity extends AppCompatActivity {
 
     private void savePayment(FarmerUdhar fu, String amount, String remark) {
         String paymentId = mDatabase.push().getKey();
-        // Repayment is an entry with negative balanceAmount to reduce the total udhar
+        // farmerId म्हणून शक्य असल्यास मोबाईल वापरावा जेणेकरून लिंकिंग सोपे होईल
+        String fId = (fu.mobile != null && !fu.mobile.isEmpty()) ? fu.mobile : fu.name;
+        
         Order payment = new Order(paymentId, "PAYMENT", "पैसे जमा (Payment)", 
-                fu.name, fu.name, fu.mobile, dealerId, "0", "0",
+                fId, fu.name, fu.mobile, dealerId, "0", "0",
                 amount, "-" + amount, "Paid", "Udhar Repayment", "", 
                 remark, System.currentTimeMillis());
 

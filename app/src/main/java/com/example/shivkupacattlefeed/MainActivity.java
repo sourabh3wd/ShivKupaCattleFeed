@@ -40,7 +40,7 @@ public class MainActivity extends AppCompatActivity {
     private DatabaseReference mDatabase;
     private String userRole = "";
     private String dealerId = "";
-    private TextView tvSummarySale, tvSummaryUdhar, tvSummaryTodayUdhar;
+    private TextView tvSummarySale, tvSummaryUdhar;
     private EditText etSearch;
     private MaterialButton btnSellProduct;
     private BottomNavigationView bottomNavigation;
@@ -51,10 +51,8 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        // जर पिन व्हेरिफाय झाला नसेल, तर पिन स्क्रीनवर पाठवा
         if (!isPinVerified) {
-            Intent intent = new Intent(this, PinActivity.class);
-            startActivity(intent);
+            startActivity(new Intent(this, PinActivity.class));
             finish();
             return;
         }
@@ -63,7 +61,6 @@ public class MainActivity extends AppCompatActivity {
 
         rvProducts = findViewById(R.id.rvProducts);
         tvSummarySale = findViewById(R.id.tvSummarySale);
-        tvSummaryTodayUdhar = findViewById(R.id.tvSummaryTodayUdhar);
         tvSummaryUdhar = findViewById(R.id.tvSummaryUdhar);
         etSearch = findViewById(R.id.etSearch);
         btnSellProduct = findViewById(R.id.btnSellProduct);
@@ -103,8 +100,15 @@ public class MainActivity extends AppCompatActivity {
         setupBottomNavigation();
 
         btnSellProduct.setOnClickListener(v -> {
-            Intent intent = new Intent(MainActivity.this, SellProductActivity.class);
-            startActivity(intent);
+            startActivity(new Intent(MainActivity.this, SellProductActivity.class));
+        });
+
+        findViewById(R.id.btnAddProduct).setOnClickListener(v -> {
+            startActivity(new Intent(MainActivity.this, AddProductActivity.class));
+        });
+
+        findViewById(R.id.btnProductMaster).setOnClickListener(v -> {
+            startActivity(new Intent(MainActivity.this, ProductMasterActivity.class));
         });
 
         findViewById(R.id.btnLogout).setOnClickListener(v -> {
@@ -117,27 +121,28 @@ public class MainActivity extends AppCompatActivity {
     private void setupBottomNavigation() {
         bottomNavigation.setOnNavigationItemSelectedListener(item -> {
             int id = item.getItemId();
-            if (id == R.id.nav_home) {
-                return true;
-            } else if (id == R.id.nav_hishob) {
-                Intent intent = new Intent(MainActivity.this, HishobActivity.class);
-                startActivity(intent);
-                return true;
-            } else if (id == R.id.nav_reports) {
-                Intent intent = new Intent(MainActivity.this, ReportsActivity.class);
-                startActivity(intent);
-                return true;
-            } else if (id == R.id.nav_stock) {
-                Intent intent = new Intent(MainActivity.this, AddProductActivity.class);
-                startActivity(intent);
-                return true;
-            } else if (id == R.id.nav_udhar) {
-                Intent intent = new Intent(MainActivity.this, UdharRegisterActivity.class);
+            if (id == R.id.nav_home) return true;
+            
+            Intent intent = null;
+            if (id == R.id.nav_hishob) intent = new Intent(this, HishobActivity.class);
+            else if (id == R.id.nav_daily_report) intent = new Intent(this, ReceivedOrdersActivity.class);
+            else if (id == R.id.nav_udhar) intent = new Intent(this, UdharRegisterActivity.class);
+            else if (id == R.id.nav_reports) intent = new Intent(this, ReportsActivity.class);
+
+            if (intent != null) {
+                intent.addFlags(Intent.FLAG_ACTIVITY_NO_ANIMATION);
                 startActivity(intent);
                 return true;
             }
             return false;
         });
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        bottomNavigation.setSelectedItemId(R.id.nav_home);
+        updateSummary();
     }
 
     private void checkUserRole() {
@@ -148,7 +153,6 @@ public class MainActivity extends AppCompatActivity {
                     userRole = snapshot.child("role").getValue(String.class);
                     fetchProducts();
                     updateSummary();
-                    checkLowStock();
                 }
             }
             @Override
@@ -161,27 +165,18 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onDataChange(@NonNull DataSnapshot snapshot) {
                 productList.clear();
-                List<Product> lowStockList = new ArrayList<>();
-                List<Product> normalStockList = new ArrayList<>();
-                
+                List<Product> lowStock = new ArrayList<>(), normalStock = new ArrayList<>();
                 for (DataSnapshot data : snapshot.getChildren()) {
                     Product p = data.getValue(Product.class);
                     if (p != null && dealerId.equals(p.dealerId)) {
                         try {
-                            double qty = Double.parseDouble(p.quantity);
-                            if (qty <= 5) {
-                                lowStockList.add(p);
-                            } else {
-                                normalStockList.add(p);
-                            }
-                        } catch (Exception e) {
-                            normalStockList.add(p);
-                        }
+                            if (Double.parseDouble(p.quantity) <= 5) lowStock.add(p);
+                            else normalStock.add(p);
+                        } catch (Exception e) { normalStock.add(p); }
                     }
                 }
-                // कमी स्टॉक असलेला माल सर्वात वर दिसेल
-                productList.addAll(lowStockList);
-                productList.addAll(normalStockList);
+                productList.addAll(lowStock);
+                productList.addAll(normalStock);
                 productAdapter.updateList(productList);
             }
             @Override
@@ -191,92 +186,43 @@ public class MainActivity extends AppCompatActivity {
 
     private void updateSummary() {
         String today = new SimpleDateFormat("dd-MM-yyyy", Locale.getDefault()).format(new Date());
-        mDatabase.child("orders").orderByChild("dealerId").equalTo(dealerId).addValueEventListener(new ValueEventListener() {
+        mDatabase.child("orders").addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot snapshot) {
                 double totalTodaySale = 0;
-                double totalTodayUdhar = 0;
                 Map<String, Double> farmerBalances = new HashMap<>();
 
                 for (DataSnapshot data : snapshot.getChildren()) {
                     Order o = data.getValue(Order.class);
-                    if (o != null) {
-                        double price = 0;
-                        double paid = 0;
-                        double bal = 0;
-                        
+                    if (o != null && dealerId.equals(o.dealerId)) {
+                        double price = 0, bal = 0;
                         try {
-                            price = Double.parseDouble(o.totalPrice != null ? o.totalPrice.replace("₹", "").replace(",", "").trim() : "0");
-                            paid = Double.parseDouble(o.paidAmount != null ? o.paidAmount.replace("₹", "").replace(",", "").trim() : "0");
-                            bal = Double.parseDouble(o.balanceAmount != null ? o.balanceAmount.replace("₹", "").replace(",", "").trim() : "0");
+                            price = Double.parseDouble(o.totalPrice != null ? o.totalPrice : "0");
+                            bal = Double.parseDouble(o.balanceAmount != null ? o.balanceAmount : "0");
                         } catch (Exception e) {}
 
                         String oDate = new SimpleDateFormat("dd-MM-yyyy", Locale.getDefault()).format(new Date(o.timestamp));
+                        boolean isPayment = "पैसे जमा (Payment)".equals(o.productName);
                         
-                        if (today.equals(oDate)) {
-                            // आजची विक्री = आज विकलेल्या मालाची एकूण किंमत
-                            totalTodaySale += price;
-                            // आजची उधारी = आजच्या सर्व व्यवहारांची बेरीज (विक्री आणि जमा)
-                            totalTodayUdhar += bal;
-                        }
+                        if (today.equals(oDate) && !isPayment) totalTodaySale += price;
 
-                        // सर्वकालीन उधारीसाठी ग्रुपिंग
-                        String key = (o.farmerMobile != null && !o.farmerMobile.isEmpty()) ? o.farmerMobile : (o.farmerName != null ? o.farmerName : "Unknown");
+                        String mobile = (o.farmerMobile != null && !o.farmerMobile.isEmpty()) ? o.farmerMobile : "NoMobile";
+                        String key = (o.farmerName != null ? o.farmerName : "Unknown") + "_" + mobile;
+                        
                         Double currentBal = farmerBalances.get(key);
-                        if (currentBal == null) currentBal = 0.0;
-                        farmerBalances.put(key, currentBal + bal);
+                        farmerBalances.put(key, (currentBal == null ? 0 : currentBal) + bal);
                     }
                 }
 
                 long grandTotalUdhar = 0;
-                for (Double fBal : farmerBalances.values()) {
-                    if (fBal > 0) {
-                        grandTotalUdhar += fBal;
-                    }
-                }
+                for (Double fBal : farmerBalances.values()) if (fBal > 0) grandTotalUdhar += fBal;
 
                 tvSummarySale.setText("₹ " + (long)totalTodaySale);
-                // आजची उधारी ० पेक्षा कमी दाखवू नका (जर जमा जास्त असेल तरी ० दाखवा)
-                tvSummaryTodayUdhar.setText("₹ " + (long)Math.max(0, totalTodayUdhar));
                 tvSummaryUdhar.setText("एकूण उधारी: ₹ " + grandTotalUdhar);
             }
             @Override
             public void onCancelled(@NonNull DatabaseError error) {}
         });
-    }
-
-    private void checkLowStock() {
-        mDatabase.child("products").addListenerForSingleValueEvent(new ValueEventListener() {
-            @Override
-            public void onDataChange(@NonNull DataSnapshot snapshot) {
-                List<String> lowStockItems = new ArrayList<>();
-                for (DataSnapshot data : snapshot.getChildren()) {
-                    Product p = data.getValue(Product.class);
-                    if (p != null && dealerId.equals(p.dealerId)) {
-                        int qty = (int) Double.parseDouble(p.quantity);
-                        if (qty <= 5) {
-                            lowStockItems.add(p.brand + " (" + qty + " शिल्लक)");
-                        }
-                    }
-                }
-                if (!lowStockItems.isEmpty()) {
-                    showLowStockDialog(lowStockItems);
-                }
-            }
-            @Override
-            public void onCancelled(@NonNull DatabaseError error) {}
-        });
-    }
-
-    private void showLowStockDialog(List<String> items) {
-        StringBuilder sb = new StringBuilder("खालील माल संपत आला आहे:\n\n");
-        for (String item : items) sb.append("• ").append(item).append("\n");
-        
-        new AlertDialog.Builder(this)
-                .setTitle("स्टॉक अलर्ट (Low Stock)")
-                .setMessage(sb.toString())
-                .setPositiveButton("ठीक आहे", null)
-                .show();
     }
 
     private void setupSearch() {

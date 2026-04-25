@@ -49,22 +49,15 @@ public class AddProductActivity extends AppCompatActivity {
     private DatabaseReference mDatabase;
     private FirebaseAuth mAuth;
 
-    private List<String> categories = new ArrayList<>(Arrays.asList(
-            "गोळी (Goli Feed)", "पेंड (Cake/Pend)", "सरकी पेंड (Cotton Seed)", "शेंगदाणा पेंड (Groundnut)",
-            "मका भरडा (Maize Crush)", "भुसा (Busa/Chunni)", "तूर चुनी (Tur)", "मुग चुनी (Moong)",
-            "उडीद चुनी (Urad)", "खनिज मिश्रण (Mineral)", "मका सुग्रास", "सायलेज (Silage)",
-            "बायपास फॅट (Bypass Fat)", "कॅल्शियम (Calcium)"
-    ));
+    private List<String> categories = new ArrayList<>();
     
-    private List<String> brands = new ArrayList<>(Arrays.asList(
-            "कपिला (Kapila)", "गोदरेज (Godrej)", "गोकुळ (Gokul)", "अमुल (Amul)", "सुग्रास (Sugras)",
-            "टाटा (Tata)", "महानंदा (Mahananda)", "हुजुर (Hujur)", "वारणा (Warana)", "सोनाई (Sonai)",
-            "नुट्रीलॅब (Nutrilab)", "कार्गिल (Cargill)", "लोकल ब्रँड (Local Brand)"
-    ));
+    private List<String> brands = new ArrayList<>();
     
     private List<String> units = new ArrayList<>(Arrays.asList("बॅग (Bag)", "किलो (Kg)", "नग (Nos)", "लिटर (Ltr)", "टन (Ton)"));
 
     private CustomDropdownAdapter categoryAdapter, brandAdapter, unitAdapter;
+    private List<ProductMaster> masterData = new ArrayList<>();
+    private Set<String> ignoredSuggestions = new HashSet<>();
 
     private String productId = null;
     private static final int REQUEST_IMAGE_CAPTURE = 1;
@@ -152,14 +145,48 @@ public class AddProductActivity extends AppCompatActivity {
         });
 
         fetchExistingSuggestions();
+        fetchMasterData();
 
         btnSave.setOnClickListener(v -> saveProduct());
         btnBack.setOnClickListener(v -> finish());
     }
 
+    private void fetchMasterData() {
+        String dId = FirebaseAuth.getInstance().getUid();
+        FirebaseDatabase.getInstance().getReference("product_master")
+                .orderByChild("dealerId").equalTo(dId)
+                .addValueEventListener(new ValueEventListener() {
+                    @Override
+                    public void onDataChange(@NonNull DataSnapshot snapshot) {
+                        masterData.clear();
+                        for (DataSnapshot data : snapshot.getChildren()) {
+                            ProductMaster pm = data.getValue(ProductMaster.class);
+                            if (pm != null) {
+                                masterData.add(pm);
+                                if (!ignoredSuggestions.contains(pm.brand) && !brands.contains(pm.brand)) brands.add(pm.brand);
+                                if (!ignoredSuggestions.contains(pm.productName) && !categories.contains(pm.productName)) categories.add(pm.productName);
+                            }
+                        }
+                        brandAdapter.notifyDataSetChanged();
+                        categoryAdapter.notifyDataSetChanged();
+                    }
+
+                    @Override
+                    public void onCancelled(@NonNull DatabaseError error) {}
+                });
+    }
+
+    private void autoFillFromMaster() {
+        // आता मास्टरमध्ये रेट आणि वजन नसल्यामुळे हे फंक्शन रिकामे केले आहे.
+        // युजर स्टॉक भरताना स्वतः माहिती टाकेल.
+    }
+
     private void setupAutoCompleteBehavior(AutoCompleteTextView view) {
         view.setOnClickListener(v -> view.showDropDown());
-        view.setOnFocusChangeListener((v, hasFocus) -> { if (hasFocus) view.showDropDown(); });
+        view.setOnFocusChangeListener((v, hasFocus) -> { 
+            if (hasFocus) view.showDropDown(); 
+        });
+        // आता तुम्ही नवीन नाव टाईप करू शकता, ते अडवले जाणार नाही.
     }
 
     private void fetchExistingSuggestions() {
@@ -172,8 +199,8 @@ public class AddProductActivity extends AppCompatActivity {
                 for (DataSnapshot data : snapshot.getChildren()) {
                     Product p = data.getValue(Product.class);
                     if (p != null) {
-                        if (p.category != null && !p.category.isEmpty()) catSet.add(p.category);
-                        if (p.brand != null && !p.brand.isEmpty()) brandSet.add(p.brand);
+                        if (p.category != null && !p.category.isEmpty() && !ignoredSuggestions.contains(p.category)) catSet.add(p.category);
+                        if (p.brand != null && !p.brand.isEmpty() && !ignoredSuggestions.contains(p.brand)) brandSet.add(p.brand);
                     }
                 }
 
@@ -330,10 +357,17 @@ public class AddProductActivity extends AppCompatActivity {
             btnDelete.setOnClickListener(v -> {
                 new AlertDialog.Builder(getContext())
                         .setTitle("काढून टाका")
-                        .setMessage("तुम्हाला '" + item + "' काढून टाकायचे आहे का?")
+                        .setMessage("तुम्हाला '" + item + "' या यादीतून काढून टाकायचे आहे का?")
                         .setPositiveButton("हो", (dialog, which) -> {
+                            ignoredSuggestions.add(item); // इग्नोर लिस्ट मध्ये टाका
+                            if (allItems != null) {
+                                allItems.remove(item);
+                            }
                             remove(item);
                             notifyDataSetChanged();
+                            
+                            // ड्रॉपडाउन रिफ्रेश करण्यासाठी
+                            targetView.dismissDropDown();
                         })
                         .setNegativeButton("नाही", null)
                         .show();

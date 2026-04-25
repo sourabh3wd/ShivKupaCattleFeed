@@ -28,44 +28,115 @@
                     app:tint="@color/white"
                     android:contentDescription="मागे जा" />
                 <TextView
-                    android:layout_width="wrap_content"
+                    android:id="@+id/tvReportTitle"
+                    android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_marginStart="8dp"
-                    android:text="मिळालेल्या ऑर्डर्स"
+                    android:layout_weight="1"
+                    android:text="दैनंदिन विक्री रिपोर्ट"
                     android:textColor="@color/white"
                     android:textSize="20sp"
                     android:textStyle="bold" />
+
+                <ImageButton
+                    android:id="@+id/btnSelectDate"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:src="@android:drawable/ic_menu_today"
+                    android:contentDescription="तारीख निवडा"
+                    app:tint="@color/white" />
             </LinearLayout>
         </androidx.appcompat.widget.Toolbar>
     </com.google.android.material.appbar.AppBarLayout>
 
-    <androidx.core.widget.NestedScrollView
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
+        android:orientation="vertical"
         app:layout_behavior="@string/appbar_scrolling_view_behavior">
 
-        <LinearLayout
+        <TextView
+            android:id="@+id/tvSelectedDateDisplay"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:padding="16dp">
+            android:background="@color/white"
+            android:padding="12dp"
+            android:text="तारीख: २३/०५/२०२४"
+            android:textColor="@color/primary"
+            android:textStyle="bold"
+            android:gravity="center"
+            android:elevation="2dp"/>
 
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="नवीन ऑर्डर्सची यादी"
-                android:textSize="18sp"
-                android:textStyle="bold"
-                android:textColor="#333333"
-                android:layout_marginBottom="12dp"/>
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/rvReceivedOrders"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:padding="12dp" />
 
-            <androidx.recyclerview.widget.RecyclerView
-                android:id="@+id/rvReceivedOrders"
+        <!-- एकूण हिशोब पट्टी -->
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:cardElevation="8dp"
+            app:cardCornerRadius="0dp">
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:nestedScrollingEnabled="false" />
+                android:orientation="horizontal"
+                android:padding="16dp"
+                android:background="@color/primary">
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="एकूण विक्री"
+                        android:textColor="#CCFFFFFF"
+                        android:textSize="12sp" />
+                    <TextView
+                        android:id="@+id/tvTotalDaySale"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="₹ 0"
+                        android:textColor="@color/white"
+                        android:textSize="18sp"
+                        android:textStyle="bold" />
+                </LinearLayout>
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:gravity="end"
+                    android:orientation="vertical">
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="एकूण जमा रोख"
+                        android:textColor="#CCFFFFFF"
+                        android:textSize="12sp" />
+                    <TextView
+                        android:id="@+id/tvTotalDayCash"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="₹ 0"
+                        android:textColor="#FFEB3B"
+                        android:textSize="18sp"
+                        android:textStyle="bold" />
+                </LinearLayout>
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
 
-        </LinearLayout>
-    </androidx.core.widget.NestedScrollView>
+        <com.google.android.material.bottomnavigation.BottomNavigationView
+            android:id="@+id/bottomNavigation"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="?android:attr/windowBackground"
+            app:menu="@menu/bottom_nav_menu" />
+    </LinearLayout>
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>
